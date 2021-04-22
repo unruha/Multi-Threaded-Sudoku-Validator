@@ -6,6 +6,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* structure for passing data to threads */
+  typedef struct {
+      // row num
+      int row;
+      // column num
+      int column;
+      // grid representing the puzzle
+      int** puzzle;
+      // length/width of puzzle
+      int size;
+      // array representing validity of indexes
+      int* validity;
+
+  } Parameters;
+
+void checkRow(Parameters* params);
+
 // takes puzzle size and grid[][] representing sudoku puzzle
 // and tow booleans to be assigned: complete and valid.
 // row-0 and column-0 is ignored for convenience, so a 9x9 puzzle
@@ -14,12 +31,6 @@
 // If complete, a puzzle is valid if all rows/columns/boxes have numbers from 1
 // to psize For incomplete puzzles, we cannot say anything about validity
 void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
-
-  /* structure for passing data to threads */
-  typedef struct {
-      int row;
-      int column;
-  } parameters;
 
   // integer array that determines the validity of each row in the puzzle
   // 0: INVALID, 1: VALID, 2: INCOMPLETE
@@ -42,6 +53,15 @@ void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
     colValidity[i] = -1;
     boxValidity[i] = -1;
   }
+
+  // testing row checker
+  Parameters* params = (Parameters*) malloc(sizeof(Parameters));
+  params->row = 1;
+  params->column = 1;
+  params->puzzle = grid;
+  params->size = psize;
+  params->validity = rowValidity; 
+  checkRow(params);
 
   *valid = false;
   *complete = false;
@@ -91,6 +111,31 @@ void deleteSudokuPuzzle(int psize, int **grid) {
   free(grid);
 }
 
+// determines whether a certain row in the puzzle is valid
+// takes in the row/ col information to check, the grid, the row/column size, 
+// and the array containing the validity values for rows
+// for rowValidity -> 0: INVALID, 1: VALID, 2: INCOMPLETE
+void checkRow(Parameters* params) {
+
+  // contains indexes for each value in the row
+  // 0 means 'not found', 1 means 'found'
+  int foundVals[params->size + 1];
+
+  // initialize all values to zero (not found)
+  for (int i = 1; i <= params->size; i++) {
+    foundVals[i] = 0;
+  }
+
+  // determines whether row is valid
+  int valid = false;
+
+  for (int i = 1; i <= params->size; i++) {
+    printf("checking index: (%d, %d)\n", params->row, i);
+    printf("value is: %d\n", params->puzzle[params->row][i]);
+    foundVals[params->puzzle[params->row][i]] = 1;
+  }
+}
+
 // expects file name of the puzzle as argument in command line
 int main(int argc, char **argv) {
   if (argc != 2) {
@@ -115,4 +160,3 @@ int main(int argc, char **argv) {
   return EXIT_SUCCESS;
 }
 
-// void checkRow(int rowNum, int** grid, )

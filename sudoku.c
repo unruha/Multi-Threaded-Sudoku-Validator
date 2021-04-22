@@ -56,12 +56,18 @@ void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
 
   // testing row checker
   Parameters* params = (Parameters*) malloc(sizeof(Parameters));
-  params->row = 1;
+  params->row = 2;
   params->column = 1;
   params->puzzle = grid;
   params->size = psize;
   params->validity = rowValidity; 
   checkRow(params);
+
+  // check rowValidity for correct values
+  printf("ROW VALIDITY TEST:\n");
+  for (int i = 1; i <= psize; i++) {
+    printf("index %d: %d\n", i, rowValidity[i]);
+  }
 
   *valid = false;
   *complete = false;
@@ -126,14 +132,34 @@ void checkRow(Parameters* params) {
     foundVals[i] = 0;
   }
 
-  // determines whether row is valid
-  int valid = false;
-
+  // debugging test
   for (int i = 1; i <= params->size; i++) {
     printf("checking index: (%d, %d)\n", params->row, i);
     printf("value is: %d\n", params->puzzle[params->row][i]);
     foundVals[params->puzzle[params->row][i]] = 1;
   }
+
+  // check foundVals
+  printf("TEST FOUNDVALS:\n");
+  for (int i = 1; i <= params->size; i++) {
+    printf("index %d: %d\n", i, foundVals[i]);
+  }
+
+  // check if there are any zeros in 'foundVals', which would mean that the row is not valid
+  bool valid = true;
+  for (int i = 1; i <= params->size; i++) {
+    if (foundVals[i] == 0) {
+      valid = false;
+      break;
+    }
+  }
+  if (!valid) {
+    params->validity[params->row] = 0;
+  }
+  else {
+    params->validity[params->row] = 1;
+  }
+
 }
 
 // expects file name of the puzzle as argument in command line

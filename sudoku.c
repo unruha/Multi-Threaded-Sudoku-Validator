@@ -14,9 +14,37 @@
 // If complete, a puzzle is valid if all rows/columns/boxes have numbers from 1
 // to psize For incomplete puzzles, we cannot say anything about validity
 void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
-  // YOUR CODE GOES HERE and in HELPER FUNCTIONS
-  *valid = true;
-  *complete = true;
+
+  /* structure for passing data to threads */
+  typedef struct {
+      int row;
+      int column;
+  } parameters;
+
+  // integer array that determines the validity of each row in the puzzle
+  // 0: INVALID, 1: VALID, 2: INCOMPLETE
+  // add 1 so that we can ignore index zero and have row number correspond with validity index
+  int* rowValidity = malloc((psize + 1) * sizeof(*rowValidity));
+
+  // integer array that determines the validity of each column in the puzzle
+  // 0: INVALID, 1: VALID, 2: INCOMPLETE
+  // add 1 so that we can ignore index zero and have column number correspond with validity index
+  int* colValidity = malloc((psize + 1) * sizeof(*colValidity));
+
+  // integer array that determines the validity of each box in the puzzle
+  // 0: INVALID, 1: VALID, 2: INCOMPLETE
+  // add 1 so that we can ignore index zero and have box number correspond with validity index
+  int* boxValidity = malloc((psize + 1) * sizeof(*boxValidity));
+
+  // initialize all values in solution arrays to -1
+  for (int i = 1; i <= psize; i++) {
+    rowValidity[i] = -1;
+    colValidity[i] = -1;
+    boxValidity[i] = -1;
+  }
+
+  *valid = false;
+  *complete = false;
 }
 
 // takes filename and pointer to grid[][]
@@ -86,3 +114,5 @@ int main(int argc, char **argv) {
   deleteSudokuPuzzle(sudokuSize, grid);
   return EXIT_SUCCESS;
 }
+
+// void checkRow(int rowNum, int** grid, )

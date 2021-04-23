@@ -22,6 +22,7 @@
   } Parameters;
 
 void checkRow(Parameters* params);
+void checkCol(Parameters* params);
 
 // takes puzzle size and grid[][] representing sudoku puzzle
 // and tow booleans to be assigned: complete and valid.
@@ -56,17 +57,23 @@ void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
 
   // testing row checker
   Parameters* params = (Parameters*) malloc(sizeof(Parameters));
-  params->row = 2;
-  params->column = 1;
+  params->row = 1;
+  params->column = 2;
   params->puzzle = grid;
   params->size = psize;
-  params->validity = rowValidity; 
-  checkRow(params);
+  params->validity = colValidity; 
+  checkCol(params);
+
+  // values being checked
+  printf("VALUES BEING CHECKED:\n");
+  for (int i = 1; i <= psize; i++) {
+    printf("index %d: %d\n", i, grid[i][params->column]);
+  }
 
   // check rowValidity for correct values
-  printf("ROW VALIDITY TEST:\n");
+  printf("COLUMN VALIDITY TEST:\n");
   for (int i = 1; i <= psize; i++) {
-    printf("index %d: %d\n", i, rowValidity[i]);
+    printf("index %d: %d\n", i, colValidity[i]);
   }
 
   *valid = false;
@@ -158,6 +165,51 @@ void checkRow(Parameters* params) {
   }
   else {
     params->validity[params->row] = 1;
+  }
+
+}
+
+// determines whether a certain column in the puzzle is valid
+// takes in the row/col information to check, the grid, the row/column size, 
+// and the array containing the validity values for rows
+// for rowValidity -> 0: INVALID, 1: VALID, 2: INCOMPLETE
+void checkCol(Parameters* params) {
+
+  // contains indexes for each value in the row
+  // 0 means 'not found', 1 means 'found'
+  int foundVals[params->size + 1];
+
+  // initialize all values to zero (not found)
+  for (int i = 1; i <= params->size; i++) {
+    foundVals[i] = 0;
+  }
+
+  // debugging test
+  for (int i = 1; i <= params->size; i++) {
+    printf("checking index: (%d, %d)\n", params->column, i);
+    printf("value is: %d\n", params->puzzle[i][params->column]);
+    foundVals[params->puzzle[i][params->column]] = 1;
+  }
+
+  // check foundVals
+  printf("TEST FOUNDVALS:\n");
+  for (int i = 1; i <= params->size; i++) {
+    printf("index %d: %d\n", i, foundVals[i]);
+  }
+
+  // check if there are any zeros in 'foundVals', which would mean that the row is not valid
+  bool valid = true;
+  for (int i = 1; i <= params->size; i++) {
+    if (foundVals[i] == 0) {
+      valid = false;
+      break;
+    }
+  }
+  if (!valid) {
+    params->validity[params->column] = 0;
+  }
+  else {
+    params->validity[params->column] = 1;
   }
 
 }

@@ -78,6 +78,8 @@ void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
     params->size = psize;
     params->validity = rowValidity;
 
+    printf("checking row: %d\n", row);
+
     checkRow(params);
   }
 
@@ -92,17 +94,29 @@ void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
     params->size = psize;
     params->validity = colValidity;
 
+    printf("checking column: %d\n", col);
+
     checkCol(params);
   }
 
-  /* // testing row checker
-  Parameters* params = (Parameters*) malloc(sizeof(Parameters));
-  params->row = 4;
-  params->column = 1;
-  params->puzzle = grid;
-  params->size = psize;
-  params->validity = boxValidity; 
-  checkBox(params); */
+  // main loop for calling helper functions to determine validity of each box
+  int boxSize = sqrt(psize);
+  for (int row = 1; row <= psize; row += boxSize) {
+    for (int col = 1; col <= psize; col += boxSize) {
+
+      // create struct to pass to box checker method
+      Parameters* params = (Parameters*) malloc(sizeof(Parameters));
+      params->row = row;
+      params->column = col;
+      params->puzzle = grid;
+      params->size = psize;
+      params->validity = boxValidity;
+
+      printf("checking box: (%d, %d)\n", row, col);
+
+      checkBox(params);
+    }
+  }
 
   // check rowValidity for correct values
   printf("ROW VALIDITY TEST:\n");
@@ -116,7 +130,40 @@ void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
     printf("index %d: %d\n", i, colValidity[i]);
   }
 
-  *valid = false;
+  // check boxValidity for correct values
+  printf("BOX VALIDITY TEST:\n");
+  for (int i = 1; i <= psize; i++) {
+    printf("index %d: %d\n", i, boxValidity[i]);
+  }
+
+  // check all validity arrays to see if the puzzle is valid
+  *valid = true;
+
+  for (int i = 1; i <= psize; i++) {
+
+    // error checking for if an index was never checked
+    if (rowValidity[i] == -1) {
+      printf("ERROR: not all rows were checked");
+      *valid = false;
+      return;
+    }
+    if (colValidity[i] == -1) {
+      printf("ERROR: not all columns were checked");
+      *valid = false;
+      return;
+    }
+    if (boxValidity[i] == -1) {
+      printf("ERROR: not all boxes were checked");
+      *valid = false;
+      return;
+    }
+
+    if (rowValidity[i] == 0 || colValidity[i] == 0 || boxValidity[i] == 0) {
+      *valid = false;
+      return;
+    }
+  }
+ 
 }
 
 // takes filename and pointer to grid[][]
@@ -259,8 +306,6 @@ void checkBox(Parameters* params) {
   // loop through the indexes of the box and indicate in 'foundVals' whether the value is found
   for (int row = params->row; row <= params->row + length - 1; row++) {
     for (int col = params->column; col <= params->column + length - 1; col++) {
-      printf("checking index: (%d, %d)\n", row, col);
-      printf("value is: %d\n", params->puzzle[row][col]);
       foundVals[params->puzzle[row][col]] = 1;
     }
   }

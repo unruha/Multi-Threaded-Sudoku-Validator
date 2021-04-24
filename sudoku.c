@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 /* structure for passing data to threads */
   typedef struct {
@@ -23,6 +24,11 @@
 
 void checkRow(Parameters* params);
 void checkCol(Parameters* params);
+void checkBox(Parameters* params);
+bool verifyPuzzleComplete(int** puzzle, int size);
+
+// stores the current box index
+int boxCount = 1;
 
 // takes puzzle size and grid[][] representing sudoku puzzle
 // and tow booleans to be assigned: complete and valid.
@@ -32,6 +38,12 @@ void checkCol(Parameters* params);
 // If complete, a puzzle is valid if all rows/columns/boxes have numbers from 1
 // to psize For incomplete puzzles, we cannot say anything about validity
 void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
+
+  // determine whether the puzzle is complete
+  *complete = verifyPuzzleComplete(grid, psize);
+  if (*complete == false) {
+    return;
+  }
 
   // integer array that determines the validity of each row in the puzzle
   // 0: INVALID, 1: VALID, 2: INCOMPLETE
@@ -55,19 +67,47 @@ void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
     boxValidity[i] = -1;
   }
 
-  // testing row checker
+  // main loop for calling helper functions to determine validity of each row
+  for (int row = 1; row <= psize; row++) {
+
+    // create the struct to pass to the method
+    Parameters* params = (Parameters*) malloc(sizeof(Parameters));
+    params->row = row;
+    params->column = -1;
+    params->puzzle = grid;
+    params->size = psize;
+    params->validity = rowValidity;
+
+    checkRow(params);
+  }
+
+  // main loop for calling helper functions to determine validity of each column
+  for (int col = 1; col <= psize; col++) {
+
+    // create the struct to pass to the method
+    Parameters* params = (Parameters*) malloc(sizeof(Parameters));
+    params->row = -1;
+    params->column = col;
+    params->puzzle = grid;
+    params->size = psize;
+    params->validity = colValidity;
+
+    checkCol(params);
+  }
+
+  /* // testing row checker
   Parameters* params = (Parameters*) malloc(sizeof(Parameters));
-  params->row = 1;
-  params->column = 2;
+  params->row = 4;
+  params->column = 1;
   params->puzzle = grid;
   params->size = psize;
-  params->validity = colValidity; 
-  checkCol(params);
+  params->validity = boxValidity; 
+  checkBox(params); */
 
-  // values being checked
-  printf("VALUES BEING CHECKED:\n");
+  // check rowValidity for correct values
+  printf("ROW VALIDITY TEST:\n");
   for (int i = 1; i <= psize; i++) {
-    printf("index %d: %d\n", i, grid[i][params->column]);
+    printf("index %d: %d\n", i, rowValidity[i]);
   }
 
   // check rowValidity for correct values
@@ -77,7 +117,6 @@ void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
   }
 
   *valid = false;
-  *complete = false;
 }
 
 // takes filename and pointer to grid[][]
@@ -141,15 +180,7 @@ void checkRow(Parameters* params) {
 
   // debugging test
   for (int i = 1; i <= params->size; i++) {
-    printf("checking index: (%d, %d)\n", params->row, i);
-    printf("value is: %d\n", params->puzzle[params->row][i]);
     foundVals[params->puzzle[params->row][i]] = 1;
-  }
-
-  // check foundVals
-  printf("TEST FOUNDVALS:\n");
-  for (int i = 1; i <= params->size; i++) {
-    printf("index %d: %d\n", i, foundVals[i]);
   }
 
   // check if there are any zeros in 'foundVals', which would mean that the row is not valid
@@ -175,7 +206,7 @@ void checkRow(Parameters* params) {
 // for rowValidity -> 0: INVALID, 1: VALID, 2: INCOMPLETE
 void checkCol(Parameters* params) {
 
-  // contains indexes for each value in the row
+  // contains indexes for each value in the column
   // 0 means 'not found', 1 means 'found'
   int foundVals[params->size + 1];
 
@@ -186,15 +217,7 @@ void checkCol(Parameters* params) {
 
   // debugging test
   for (int i = 1; i <= params->size; i++) {
-    printf("checking index: (%d, %d)\n", params->column, i);
-    printf("value is: %d\n", params->puzzle[i][params->column]);
     foundVals[params->puzzle[i][params->column]] = 1;
-  }
-
-  // check foundVals
-  printf("TEST FOUNDVALS:\n");
-  for (int i = 1; i <= params->size; i++) {
-    printf("index %d: %d\n", i, foundVals[i]);
   }
 
   // check if there are any zeros in 'foundVals', which would mean that the row is not valid
@@ -212,6 +235,66 @@ void checkCol(Parameters* params) {
     params->validity[params->column] = 1;
   }
 
+}
+
+// determines whether a certain sqrt(n) * sqrt(n) box in the puzzle is valid
+// takes the upper left corner of the box to be checked
+// takes in the row/col information to check, the grid, the row/column size, 
+// and the array containing the validity values for rows
+// for rowValidity -> 0: INVALID, 1: VALID, 2: INCOMPLETE
+void checkBox(Parameters* params) {
+
+  // contains indexes for each value in the box
+  // 0 means 'not found', 1 means 'found'
+  int foundVals[params->size + 1];
+
+  // initialize all values to zero (not found)
+  for (int i = 1; i <= params->size; i++) {
+    foundVals[i] = 0;
+  }
+
+  // represents the width and height of the box
+  int length = sqrt(params->size);
+
+  // loop through the indexes of the box and indicate in 'foundVals' whether the value is found
+  for (int row = params->row; row <= params->row + length - 1; row++) {
+    for (int col = params->column; col <= params->column + length - 1; col++) {
+      printf("checking index: (%d, %d)\n", row, col);
+      printf("value is: %d\n", params->puzzle[row][col]);
+      foundVals[params->puzzle[row][col]] = 1;
+    }
+  }
+
+  // check if there are any zeros in 'foundVals' which would indicate that the puzzle is not valid
+  bool valid = true;
+  for (int i = 1; i <= params->size; i++) {
+    if (foundVals[i] == 0) {
+      valid = false;
+      break;
+    }
+  }
+  // determine the index of the box in the boxValidity array
+  if (!valid) {
+    params->validity[boxCount] = 0;
+  }
+  else {
+    params->validity[boxCount] = 1;
+  }
+  boxCount = boxCount + 1;
+}
+
+// determines whether the puzzle is complete (no zeros)
+bool verifyPuzzleComplete(int** puzzle, int size) {
+  bool complete = true;
+  for (int row = 1; row <= size; row++) {
+    for (int col = 1; col <= size; col++) {
+      if (puzzle[row][col] == 0) {
+        complete = false;
+        break;
+      }
+    }
+  }
+  return complete;
 }
 
 // expects file name of the puzzle as argument in command line

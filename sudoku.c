@@ -22,9 +22,9 @@
 
   } Parameters;
 
-void checkRow(Parameters* params);
-void checkCol(Parameters* params);
-void checkBox(Parameters* params);
+void* checkRow(void* parameters);
+void* checkCol(void* parameters);
+void* checkBox(void* parameters);
 bool verifyPuzzleComplete(int** puzzle, int size);
 
 // stores the current box index
@@ -67,6 +67,27 @@ void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
     boxValidity[i] = -1;
   }
 
+  // allocate memory for threads
+  pthread_t* rowThreads = malloc(sizeof(pthread_t) * (psize + 1));
+  pthread_t* colThreads = malloc(sizeof(pthread_t) * (psize + 1));
+  pthread_t* boxThreads = malloc(sizeof(pthread_t) * (psize + 1));
+
+  // error check thread memory allocation
+  if (rowThreads == NULL) {
+    printf("ERROR: out of memory for row threads\n");
+    exit(EXIT_FAILURE);
+  }
+
+  if (colThreads == NULL) {
+    printf("ERROR: out of memory for column threads\n");
+    exit(EXIT_FAILURE);
+  }
+
+  if (boxThreads == NULL) {
+    printf("ERROR: out of memory for box threads\n");
+    exit(EXIT_FAILURE);
+  }
+
   // main loop for calling helper functions to determine validity of each row
   for (int row = 1; row <= psize; row++) {
 
@@ -78,9 +99,11 @@ void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
     params->size = psize;
     params->validity = rowValidity;
 
-    printf("checking row: %d\n", row);
-
-    checkRow(params);
+    // create the threads
+    if (pthread_create(&rowThreads[row], NULL, checkRow, (void*) params)) {
+      printf("ERROR: create row threads failed");
+      exit(EXIT_FAILURE);
+    }
   }
 
   // main loop for calling helper functions to determine validity of each column
@@ -94,13 +117,18 @@ void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
     params->size = psize;
     params->validity = colValidity;
 
-    printf("checking column: %d\n", col);
-
-    checkCol(params);
+    // create the threads
+    if (pthread_create(&colThreads[col], NULL, checkCol, (void*) params)) {
+      printf("ERROR: create column threads failed");
+      exit(EXIT_FAILURE);
+    }
   }
 
   // main loop for calling helper functions to determine validity of each box
   int boxSize = sqrt(psize);
+
+  // indexes for box threads
+  int count = 1;
   for (int row = 1; row <= psize; row += boxSize) {
     for (int col = 1; col <= psize; col += boxSize) {
 
@@ -112,10 +140,20 @@ void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
       params->size = psize;
       params->validity = boxValidity;
 
-      printf("checking box: (%d, %d)\n", row, col);
-
-      checkBox(params);
+      // create the threads
+      if (pthread_create(&boxThreads[count], NULL, checkBox, (void*) params)) {
+        printf("ERROR: create row threads failed");
+        exit(EXIT_FAILURE);
+      }
+      count++;
     }
+  }
+
+  // join all worker threads
+  for (int i = 1; i <= psize; i++) {
+    pthread_join(rowThreads[i], NULL);
+    pthread_join(colThreads[i], NULL);
+    pthread_join(boxThreads[i], NULL);
   }
 
   // check rowValidity for correct values
@@ -143,17 +181,17 @@ void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
 
     // error checking for if an index was never checked
     if (rowValidity[i] == -1) {
-      printf("ERROR: not all rows were checked");
+      printf("ERROR: not all rows were checked\n");
       *valid = false;
       return;
     }
     if (colValidity[i] == -1) {
-      printf("ERROR: not all columns were checked");
+      printf("ERROR: not all columns were checked\n");
       *valid = false;
       return;
     }
     if (boxValidity[i] == -1) {
-      printf("ERROR: not all boxes were checked");
+      printf("ERROR: not all boxes were checked\n");
       *valid = false;
       return;
     }
@@ -163,7 +201,19 @@ void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
       return;
     }
   }
- 
+  
+  // free validity array and pthread_t array memory
+  for (int i = 1; i <= psize; i++) {
+
+    free(rowValidity[i]);
+    free(colValidity[i]);
+    free(boxValidity[i]);
+
+    free(rowThreads[i]);
+    free(colThreads[i]);
+    free(boxThreads[i]);
+  }
+
 }
 
 // takes filename and pointer to grid[][]
@@ -214,7 +264,11 @@ void deleteSudokuPuzzle(int psize, int **grid) {
 // takes in the row/ col information to check, the grid, the row/column size, 
 // and the array containing the validity values for rows
 // for rowValidity -> 0: INVALID, 1: VALID, 2: INCOMPLETE
-void checkRow(Parameters* params) {
+void* checkRow(void* parameters) {
+
+  Parameters* params = (Parameters*) parameters;
+
+  printf("in thread checking row: %d\n", params->row);
 
   // contains indexes for each value in the row
   // 0 means 'not found', 1 means 'found'
@@ -251,7 +305,11 @@ void checkRow(Parameters* params) {
 // takes in the row/col information to check, the grid, the row/column size, 
 // and the array containing the validity values for rows
 // for rowValidity -> 0: INVALID, 1: VALID, 2: INCOMPLETE
-void checkCol(Parameters* params) {
+void* checkCol(void* parameters) {
+
+  Parameters* params = (Parameters*) parameters;
+
+  printf("in thread checking column: %d\n", params->column);
 
   // contains indexes for each value in the column
   // 0 means 'not found', 1 means 'found'
@@ -289,7 +347,11 @@ void checkCol(Parameters* params) {
 // takes in the row/col information to check, the grid, the row/column size, 
 // and the array containing the validity values for rows
 // for rowValidity -> 0: INVALID, 1: VALID, 2: INCOMPLETE
-void checkBox(Parameters* params) {
+void* checkBox(void* parameters) {
+
+  Parameters* params = (Parameters*) parameters;
+
+  printf("in thread checking box: (%d, %d)\n", params->row, params->column);
 
   // contains indexes for each value in the box
   // 0 means 'not found', 1 means 'found'

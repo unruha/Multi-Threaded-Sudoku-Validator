@@ -156,24 +156,6 @@ void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
     pthread_join(boxThreads[i], NULL);
   }
 
-  // check rowValidity for correct values
-  printf("ROW VALIDITY TEST:\n");
-  for (int i = 1; i <= psize; i++) {
-    printf("index %d: %d\n", i, rowValidity[i]);
-  }
-
-  // check rowValidity for correct values
-  printf("COLUMN VALIDITY TEST:\n");
-  for (int i = 1; i <= psize; i++) {
-    printf("index %d: %d\n", i, colValidity[i]);
-  }
-
-  // check boxValidity for correct values
-  printf("BOX VALIDITY TEST:\n");
-  for (int i = 1; i <= psize; i++) {
-    printf("index %d: %d\n", i, boxValidity[i]);
-  }
-
   // check all validity arrays to see if the puzzle is valid
   *valid = true;
 
@@ -202,18 +184,14 @@ void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
     }
   }
   
-  // free validity array and pthread_t array memory
-  for (int i = 1; i <= psize; i++) {
+  // free validity and thread arrays
+  free(rowValidity);
+  free(colValidity);
+  free(boxValidity);
 
-    free(rowValidity[i]);
-    free(colValidity[i]);
-    free(boxValidity[i]);
-
-    free(rowThreads[i]);
-    free(colThreads[i]);
-    free(boxThreads[i]);
-  }
-
+  free(rowThreads);
+  free(colThreads);
+  free(boxThreads);
 }
 
 // takes filename and pointer to grid[][]
@@ -268,8 +246,6 @@ void* checkRow(void* parameters) {
 
   Parameters* params = (Parameters*) parameters;
 
-  printf("in thread checking row: %d\n", params->row);
-
   // contains indexes for each value in the row
   // 0 means 'not found', 1 means 'found'
   int foundVals[params->size + 1];
@@ -308,8 +284,6 @@ void* checkRow(void* parameters) {
 void* checkCol(void* parameters) {
 
   Parameters* params = (Parameters*) parameters;
-
-  printf("in thread checking column: %d\n", params->column);
 
   // contains indexes for each value in the column
   // 0 means 'not found', 1 means 'found'
@@ -350,8 +324,6 @@ void* checkCol(void* parameters) {
 void* checkBox(void* parameters) {
 
   Parameters* params = (Parameters*) parameters;
-
-  printf("in thread checking box: (%d, %d)\n", params->row, params->column);
 
   // contains indexes for each value in the box
   // 0 means 'not found', 1 means 'found'

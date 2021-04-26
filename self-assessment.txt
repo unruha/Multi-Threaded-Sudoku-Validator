@@ -1,0 +1,9 @@
+Adrian Unruh
+
+What I have and have not implemented:
+    - Can verify whether is valid or not: YES
+    - Starts/joins multiple threads to speedup operation: YES
+    - For N*N complete puzzle, can verify whether it is valid or not: YES
+    - The number of threads in proportional to N: YES (the number of threads is 3*N, where N is width of the puzzle)
+    - Bonus: Can complete puzzles: NO
+    - Bonus: Can complete difficult puzzles: NO

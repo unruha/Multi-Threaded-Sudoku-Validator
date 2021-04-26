@@ -1,3 +1,7 @@
+// Adrian Unruh
+// compile: gcc -o sudoku -lm -pthread sudoku.c
+// run (verify complete puzzle and valid puzzle): ./sudoku puzzle.txt
+
 // Sudoku puzzle verifier and solver
 
 #include <assert.h>
